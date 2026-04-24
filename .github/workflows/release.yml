@@ -7,16 +7,28 @@ on:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            ext: tar.gz
+            bin: minimalfetch
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            ext: tar.gz
+            bin: minimalfetch
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: zip
+            bin: minimalfetch.exe
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -24,24 +36,45 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
-      - name: Build (release)
+      - name: Build release
         run: cargo build --release
 
-      # Rename binaries per OS
-      - name: Prepare artifact
+      # -------------------------
+      # PACKAGE
+      # -------------------------
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir dist
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp target/release/minimalfetch.exe dist/minimalfetch-windows.exe
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            cp target/release/minimalfetch dist/minimalfetch-macos
-          else
-            cp target/release/minimalfetch dist/minimalfetch-linux
-          fi
+          VERSION="${GITHUB_REF_NAME}"
 
+          mkdir dist
+          cp target/release/${{ matrix.bin }} dist/
+
+          tar -czf \
+            "minimalfetch-${VERSION}-${{ matrix.target }}.${{ matrix.ext }}" \
+            -C dist ${{ matrix.bin }}
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}"
+
+          mkdir dist
+          Copy-Item "target/release/minimalfetch.exe" "dist/"
+
+          Compress-Archive `
+            -Path "dist/minimalfetch.exe" `
+            -DestinationPath "minimalfetch-$version-${{ matrix.target }}.${{ matrix.ext }}"
+
+      # -------------------------
+      # UPLOAD
+      # -------------------------
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minimalfetch-${{ matrix.os }}
-          path: dist/*
+          name: minimalfetch-${{ matrix.target }}
+          path: |
+            *.tar.gz
+            *.zip
