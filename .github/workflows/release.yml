@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build (release)
+        run: cargo build --release
+
+      # Rename binaries per OS
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          mkdir dist
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            cp target/release/minimalfetch.exe dist/minimalfetch-windows.exe
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            cp target/release/minimalfetch dist/minimalfetch-macos
+          else
+            cp target/release/minimalfetch dist/minimalfetch-linux
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimalfetch-${{ matrix.os }}
+          path: dist/*

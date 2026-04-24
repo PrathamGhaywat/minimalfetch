@@ -24,6 +24,7 @@ checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 name = "minimalfetch"
 version = "0.1.0"
 dependencies = [
+ "owo-colors",
  "sysinfo",
 ]
 
@@ -54,6 +55,12 @@ dependencies = [
  "libc",
  "objc2-core-foundation",
 ]
+
+[[package]]
+name = "owo-colors"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d211803b9b6b570f68772237e415a029d5a50c65d382910b879fb19d3271f94d"
 
 [[package]]
 name = "proc-macro2"
