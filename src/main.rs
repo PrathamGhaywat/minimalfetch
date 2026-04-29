@@ -18,11 +18,9 @@ fn main() {
 
         sys.refresh_all();
 
-        // memory (bytes → GB)
         let used_mem = sys.used_memory() as f64 / 1_073_741_824.0;
         let total_mem = sys.total_memory() as f64 / 1_073_741_824.0;
 
-        // disk (bytes → GB)
         let used_disk = (space - available_space) as f64 / 1_073_741_824.0;
         let total_disk = space as f64 / 1_073_741_824.0;
         let free_disk = available_space as f64 / 1_073_741_824.0;
